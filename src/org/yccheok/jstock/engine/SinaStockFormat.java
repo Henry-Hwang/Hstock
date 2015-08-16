@@ -100,10 +100,10 @@ public class SinaStockFormat implements StockFormat {
             if(indexPrefix2 != -1) {
                 int index = respondBuilder.indexOf("=", indexPrefix2 );
                 respondBuilder.insert(index, shanghaiYahoo);
-                respondBuilder.replace(indexPrefix2, indexPrefix2 + (sinaFmtPrefix + shenzhenSina).length(), "");
+                respondBuilder.replace(indexPrefix2, indexPrefix2 + (sinaFmtPrefix + shanghaiSina).length(), "");
             }
                 
-        } while(indexPrefix2 != -1 && indexPrefix1 != -1 );
+        } while(indexPrefix2 != -1 || indexPrefix1 != -1);
         return respondBuilder.toString().replace("=", ",").replace("\"", "");    
     }
     @Override
@@ -209,7 +209,7 @@ public class SinaStockFormat implements StockFormat {
         if (source == null) {
             return stocks;
         }                         
-        System.out.println("SinaStockFormat: parse(): source : " + source);
+        //System.out.println("SinaStockFormat: parse(): source : " + source);
         //final String[] strings = source.split("\r\n|\r|\n");
         //String tsrc = "\"600016.SS\",\"Microsoft Corporation\",\"NMS\",\"600016.SS\",46.73,\"600016.SS\",46.54,\"600016.SS\",47.00,\"600016.SS\",47.10,\"600016.SS\",46.52,\"600016.SS\",21473402,\"600016.SS\",+0.27,\"600016.SS\",\"+0.58%\",\"600016.SS\",N/A,\"600016.SS\",N/A,\"600016.SS\",1200,\"600016.SS\",N/A,\"600016.SS\",900,\"600016.SS\",\"8/14/2015\",\"4:00pm\"";
         //final String[] strings = tsrc.split("\r\n|\r|\n");
@@ -219,10 +219,11 @@ public class SinaStockFormat implements StockFormat {
         tsource = tsource.replace("\"", "");
                 */
         String tsource = parseToYahooFmt(source);
+        System.out.println("SinaStockFormat: parse(): tsource : " + tsource);
         final String[] strings = tsource.split("\r\n|\r|\n"); 
       
         for (String string : strings) {
-            System.out.println("SinaStockFormat: parse(): string: " +  string) ;
+            //System.out.println("SinaStockFormat: parse(): string: " +  string) ;
             // ",123,456,"   -> ",123456,"
             // ","abc,def"," -> ","abcdef","
             // Please refer http://stackoverflow.com/questions/15692458/different-regular-expression-result-in-java-se-and-android-platform for more details.
@@ -249,10 +250,11 @@ public class SinaStockFormat implements StockFormat {
                 continue;
             }
             final int length = fields.length;
-            
+           /* 
             for(int i = 0; i < length; i ++) {
                 System.out.println("fields[" + i + "]" + fields[i]);
             }
+            */
             Code code = null;
             Symbol symbol = null;
             String name = null;
