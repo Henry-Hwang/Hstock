@@ -1,6 +1,6 @@
 /*
  * JStock - Free Stock Market Software
- * Copyright (C) 2011 Yan Cheng CHEOK <yccheok@yahoo.com>
+ * Copyright (C) 2011 Henry Huang  <henry.huang@cirrus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 51 Franklin Street, Fifth Floor, Shenzhen, Aug 02110-1301 China.
  */
 
 package org.yccheok.jstock.engine;
@@ -32,9 +32,9 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author yccheok
  */
-public class YahooStockFormat implements StockFormat {
+public class SinaStockFormat implements StockFormat {
 
-    private YahooStockFormat() {}
+    private SinaStockFormat() {}
 
     // This function is used to resolve, random corrupted data returned from
     // Yahoo! server. Once a while, we will receive complain from users as in
@@ -70,16 +70,72 @@ public class YahooStockFormat implements StockFormat {
         // If more than 13 days old stock, we consider it as corrupted stock.
         return (Utils.getDifferenceInDays(timestamp, now) > 13);
     }
-
-    /**
-     *
-     * @param source
-     * @return
-     */
-    @Override
-    public String parseAsSinaStockFmt(String source){
-        return null;   
+    private String parseToYahooFmt(String respond) {
+        //we can get the stock infomation form SINA like this: 
+        //HttpMethod method=new GetMethod("http://hq.sinajs.cn/list=sh601016,sz000005,sh600477,sz000005,")
+        //=========================================================================================
+        //var hq_str_sh601016="节能风电,31.28,30.91,31.84,32.45,30.70,31.72,31.74,13154727,413638393,900,31.72,500,31.71,4800,31.70,500,31.66,2000,31.65,1700,31.74,600,31.75,5200,31.76,74300,31.77,6300,31.80,2015-08-14,15:04:10,00";
+        //var hq_str_sz000005="世纪星源,9.13,8.80,8.81,9.15,8.71,8.81,8.82,76419762,679014076.19,406729,8.81,641878,8.80,74800,8.79,97800,8.78,54800,8.77,140599,8.82,47409,8.83,137500,8.84,349200,8.85,286383,8.86,2015-08-14,15:05:33,00";
+        //var hq_str_sh600477="杭萧钢构,12.20,11.84,12.71,13.02,12.15,12.71,12.73,108146801,1376185882,25873,12.71,26380,12.70,31700,12.69,41100,12.68,3000,12.67,10872,12.73,86600,12.74,92646,12.75,54118,12.76,14256,12.77,2015-08-14,15:04:10,00";
+        //var hq_str_sz000005="世纪星源,9.13,8.80,8.81,9.15,8.71,8.81,8.82,76419762,679014076.19,406729,8.81,641878,8.80,74800,8.79,97800,8.78,54800,8.77,140599,8.82,47409,8.83,137500,8.84,349200,8.85,286383,8.86,2015-08-14,15:05:33,00";
+        
+        //now , we need to change strings to the one that show below:
+        //601016.SS,节能风电,31.28,30.91,31.84,32.45,30.70,31.72,31.74,13154727,413638393,900,31.72,500,31.71,4800,31.70,500,31.66,2000,31.65,1700,31.74,600,31.75,5200,31.76,74300,31.77,6300,31.80,2015-08-14,15:04:10,00;
+        //000005.SZ,世纪星源,9.13,8.80,8.81,9.15,8.71,8.81,8.82,76419762,679014076.19,406729,8.81,641878,8.80,74800,8.79,97800,8.78,54800,8.77,140599,8.82,47409,8.83,137500,8.84,349200,8.85,286383,8.86,2015-08-14,15:05:33,00;
+        //600477.SS,杭萧钢构,12.20,11.84,12.71,13.02,12.15,12.71,12.73,108146801,1376185882,25873,12.71,26380,12.70,31700,12.69,41100,12.68,3000,12.67,10872,12.73,86600,12.74,92646,12.75,54118,12.76,14256,12.77,2015-08-14,15:04:10,00;
+        //000005.SZ,世纪星源,9.13,8.80,8.81,9.15,8.71,8.81,8.82,76419762,679014076.19,406729,8.81,641878,8.80,74800,8.79,97800,8.78,54800,8.77,140599,8.82,47409,8.83,137500,8.84,349200,8.85,286383,8.86,2015-08-14,15:05:33,00;
+       
+        final StringBuilder respondBuilder = new StringBuilder(respond.replace("\"", ""));
+        String str = respondBuilder.toString();
+        int indexPrefix1, indexPrefix2; 
+        do {
+            indexPrefix1 = respondBuilder.indexOf(sinaFmtPrefix + shenzhenSina);
+            if(indexPrefix1 != -1) {
+                int index = respondBuilder.indexOf("=", indexPrefix1 );
+                respondBuilder.insert(index, shenzhenYahoo);
+                respondBuilder.replace(indexPrefix1, indexPrefix1 + (sinaFmtPrefix + shenzhenSina).length(), "");
+            }
+            
+            indexPrefix2 = respondBuilder.indexOf(sinaFmtPrefix + shanghaiSina);
+            if(indexPrefix2 != -1) {
+                int index = respondBuilder.indexOf("=", indexPrefix2 );
+                respondBuilder.insert(index, shanghaiYahoo);
+                respondBuilder.replace(indexPrefix2, indexPrefix2 + (sinaFmtPrefix + shenzhenSina).length(), "");
+            }
+                
+        } while(indexPrefix2 != -1 && indexPrefix1 != -1 );
+        return respondBuilder.toString().replace("=", ",").replace("\"", "");    
     }
+    @Override
+    public String parseAsSinaStockFmt(String source) {
+            String codes = null;
+            final CSVParser csvParser = new CSVParser();
+            String[] fields = null;
+            try {
+                fields = csvParser.parseLine(source);
+            } catch (IOException ex) {
+                log.error(null, ex);
+               // continue;
+            }
+            final int length = fields.length;
+            
+            final StringBuilder codeBuilder = new StringBuilder();
+            for(int i = 0; i < length; i ++) {
+                String tcodes = null;
+                if(fields[i].contains(shanghaiYahoo)) {
+                    tcodes = shanghaiSina + fields[i].replace(shanghaiYahoo, "");
+                } else if (fields[i].contains(shenzhenYahoo)) {
+                    tcodes = shenzhenSina + fields[i].replace(shenzhenYahoo, "");
+                } else{
+                    System.out.println("SinaStockFormat::parseAsSinaStockFmt(): Unkown Stock Format!!");
+                }
+                StringBuilder append = codeBuilder.append(tcodes).append(",");
+                // codes = codes + tcodes;
+            }
+            System.out.println("SinaStockFormat::parseAsSinaStockFmt(): Sian Format: " + codeBuilder.toString());
+        return codeBuilder.toString();
+    }
+    
     // Update on 19 March 2009 : We cannot assume certain parameters will always
     // be float. They may become integer too. For example, in the case of Korea
     // Stock Market, Previous Close is in integer. We shall apply string quote
@@ -153,16 +209,27 @@ public class YahooStockFormat implements StockFormat {
         if (source == null) {
             return stocks;
         }                         
-        final String[] strings = source.split("\r\n|\r|\n");
-        
+        System.out.println("SinaStockFormat: parse(): source : " + source);
+        //final String[] strings = source.split("\r\n|\r|\n");
+        //String tsrc = "\"600016.SS\",\"Microsoft Corporation\",\"NMS\",\"600016.SS\",46.73,\"600016.SS\",46.54,\"600016.SS\",47.00,\"600016.SS\",47.10,\"600016.SS\",46.52,\"600016.SS\",21473402,\"600016.SS\",+0.27,\"600016.SS\",\"+0.58%\",\"600016.SS\",N/A,\"600016.SS\",N/A,\"600016.SS\",1200,\"600016.SS\",N/A,\"600016.SS\",900,\"600016.SS\",\"8/14/2015\",\"4:00pm\"";
+        //final String[] strings = tsrc.split("\r\n|\r|\n");
+        /*
+        String tsource = source.replace("var hq_str_", "");
+        tsource = tsource.replace("=", ",");
+        tsource = tsource.replace("\"", "");
+                */
+        String tsource = parseToYahooFmt(source);
+        final String[] strings = tsource.split("\r\n|\r|\n"); 
+      
         for (String string : strings) {
+            System.out.println("SinaStockFormat: parse(): string: " +  string) ;
             // ",123,456,"   -> ",123456,"
             // ","abc,def"," -> ","abcdef","
             // Please refer http://stackoverflow.com/questions/15692458/different-regular-expression-result-in-java-se-and-android-platform for more details.
             //
             // The idea is : If a comma doesn't have double quote on its left AND on its right, replace it with empty string.
             // http://www.regular-expressions.info/lookaround.html
-            final String stringDigitWithoutComma = commaNotBetweenQuotes.matcher(string).replaceAll("");
+           // final String stringDigitWithoutComma = commaNotBetweenQuotes.matcher(string).replaceAll("");
 
             // Do not use String.split although it might be faster.
             // This is because after stringDigitWithoutComma regular expression, we have an edge case
@@ -175,13 +242,17 @@ public class YahooStockFormat implements StockFormat {
             final CSVParser csvParser = new CSVParser();
             String[] fields;
             try {
-                fields = csvParser.parseLine(stringDigitWithoutComma);
+                //fields = csvParser.parseLine(stringDigitWithoutComma);
+                fields = csvParser.parseLine(string);
             } catch (IOException ex) {
                 log.error(null, ex);
                 continue;
             }
             final int length = fields.length;
             
+            for(int i = 0; i < length; i ++) {
+                System.out.println("fields[" + i + "]" + fields[i]);
+            }
             Code code = null;
             Symbol symbol = null;
             String name = null;
@@ -212,17 +283,22 @@ public class YahooStockFormat implements StockFormat {
             long timestamp = 0;
             
             do {
-                if (length < 1) break; code = Code.newInstance(quotePattern.matcher(fields[0]).replaceAll("").trim());
+                /*
+                if(fields[0].contains(shanghaiSina)) {
+                    fields[0] = fields[0].replace(shanghaiSina, "") + shanghaiYahoo;
+                } else if (fields[0].contains(shenzhenSina)){
+                    fields[0] = fields[0].replace(shenzhenSina, "") + shenzhenYahoo;
+                } else {
+                    break;
+                }
+                */
+                code = Code.newInstance(quotePattern.matcher(fields[0]).replaceAll("").trim());
+                name = quotePattern.matcher(fields[1]).replaceAll("").trim();
                 
-                if (length < 2) break; name = quotePattern.matcher(fields[1]).replaceAll("").trim();
-
                 // We use name as symbol, to make it more readable.
-                symbol = Symbol.newInstance(name.toString());
-
-                if (length < 3) break;
-                
+                symbol = Symbol.newInstance(name.toString());       
                 try {
-                    board = Stock.Board.valueOf(quotePattern.matcher(fields[2]).replaceAll("").trim());
+                    board = Stock.Board.valueOf(quotePattern.matcher(fields[1]).replaceAll("").trim());
                 }
                 catch (java.lang.IllegalArgumentException exp) {
                     board = Stock.Board.Unknown;
@@ -230,34 +306,15 @@ public class YahooStockFormat implements StockFormat {
                 
                 industry = Stock.Industry.Unknown;
                 
-                if (length < 5) break;
-                try { prevPrice = Double.parseDouble(fields[4]); } catch (NumberFormatException exp) {}
-                
-                if (length < 7) break;
-                try { openPrice = Double.parseDouble(fields[6]); } catch (NumberFormatException exp) {}
-                
-                if (length < 9) break;
-                try { lastPrice = Double.parseDouble(fields[8]); } catch (NumberFormatException exp) {}
-
-                if (length < 11) break;
-                try { highPrice = Double.parseDouble(fields[10]); } catch (NumberFormatException exp) {}
-
-                if (length < 13) break;
-                try { lowPrice = Double.parseDouble(fields[12]); } catch (NumberFormatException exp) {}
-
-                if (length < 15) break;
+                try { prevPrice = Double.parseDouble(fields[3]); } catch (NumberFormatException exp) {}
+                try { openPrice = Double.parseDouble(fields[2]); } catch (NumberFormatException exp) {}
+                try { lastPrice = Double.parseDouble(fields[4]); } catch (NumberFormatException exp) {}
+                try { highPrice = Double.parseDouble(fields[5]); } catch (NumberFormatException exp) {}
+                try { lowPrice = Double.parseDouble(fields[6]); } catch (NumberFormatException exp) {}
                 // TODO: CRITICAL LONG BUG REVISED NEEDED.
-                try { volume = Long.parseLong(fields[14]); } catch (NumberFormatException exp) {}
-
-                if (length < 17) break;
-                try { changePrice = Double.parseDouble(quotePattern.matcher(fields[16]).replaceAll("").trim()); } catch (NumberFormatException exp) {}
-
-                if (length < 19) break;
-                String _changePricePercentage = quotePattern.matcher(fields[18]).replaceAll("");
-                _changePricePercentage = percentagePattern.matcher(_changePricePercentage).replaceAll("");
-                try { changePricePercentage = Double.parseDouble(_changePricePercentage); } catch (NumberFormatException exp) {}
-
-                if (length < 21) break;
+                try { volume = Long.parseLong(fields[9]); } catch (NumberFormatException exp) {}
+                changePrice = lastPrice - openPrice;              
+                changePricePercentage = (changePrice * 100)/openPrice;
                 try { lastVolume = Integer.parseInt(fields[20]); } catch (NumberFormatException exp) {}
                 
                 if (length < 23) break;
@@ -286,6 +343,7 @@ public class YahooStockFormat implements StockFormat {
                 
                 break;
             } while(true);
+            System.out.println("SinaStockFormat: parse(): while breaked ");
             if (code == null || symbol == null || name == null || board == null || industry == null) {
                 continue;
             }
@@ -311,9 +369,7 @@ public class YahooStockFormat implements StockFormat {
                     fields[16].equalsIgnoreCase("N/A") &&
                     fields[14].equalsIgnoreCase("N/A") &&
                     fields[12].equalsIgnoreCase("N/A") &&
-                    fields[10].equalsIgnoreCase("N/A") &&
-                    fields[6].equalsIgnoreCase("N/A") &&
-                    fields[4].equalsIgnoreCase("N/A")
+                    fields[10].equalsIgnoreCase("N/A") 
                 ) {
                     continue;
                 }
@@ -353,6 +409,7 @@ public class YahooStockFormat implements StockFormat {
 
             stocks.add(stock);            
         }
+        System.out.println("SinaStockFormat: parse End");
         return stocks;
     }
 
@@ -360,7 +417,7 @@ public class YahooStockFormat implements StockFormat {
         return stockFormat;
     }
     
-    private static final StockFormat stockFormat = new YahooStockFormat();
+    private static final StockFormat stockFormat = new SinaStockFormat();
     
     // ",123,456,"   -> ",123456,"
     // ","abc,def"," -> ","abcdef","
@@ -372,6 +429,10 @@ public class YahooStockFormat implements StockFormat {
 
     private static final Pattern quotePattern = Pattern.compile("\"");
     private static final Pattern percentagePattern = Pattern.compile("%");
-    
-    private static final Log log = LogFactory.getLog(YahooStockFormat.class);
+    private static final String shanghaiYahoo = ".SS";
+    private static final String shenzhenYahoo = ".SZ";
+    private static final String shanghaiSina = "sh";
+    private static final String shenzhenSina = "sz";
+    private static final String sinaFmtPrefix = "var hq_str_";
+    private static final Log log = LogFactory.getLog(SinaStockFormat.class);
 }

@@ -43,7 +43,6 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
         this.stockServerFactory = stockServerFactory;
         this.setStatus(Status.Busy);
         this.setToolTipText("Checking for server health...");
-
         final Class c = stockServerFactory.getClass();
         if (c == org.yccheok.jstock.engine.GoogleStockServerFactory.class) {
             // Hacking from preventing GoogleStockServerFactory being selected
@@ -66,6 +65,9 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
         else if (c == org.yccheok.jstock.engine.GoogleStockServerFactory.class) {
             return GUIBundle.getString("StockServerFactoryJRadioButton_GoogleStockServerFactory");
         }
+        else if (c == org.yccheok.jstock.engine.SinaStockServerFactory.class) {
+            return GUIBundle.getString("StockServerFactoryJRadioButton_SinaStockServerFactory");
+        }
         return c.getSimpleName();
     }
 
@@ -75,7 +77,6 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
         final Country country = MainFrame.getInstance().getJStockOptions().getCountry();
         
         final Health health = new Health();
-
         /* Test For Stock */
         Class c = stockServerFactory.getClass();
 
@@ -162,7 +163,7 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
             public Health doInBackground() {
                 return getServerHealth();
             }
-
+            
             @Override
             public void done() {
                 // The done Method: When you are informed that the SwingWorker
@@ -176,7 +177,6 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
                 if (this.isCancelled()) {
                     return;
                 }
-
                 Health health = null;
                 try {
                     health = get();
@@ -216,7 +216,6 @@ public class StockServerFactoryJRadioButton extends JRadioButton {
         this.status = status;
 
         final String text = toReadableText(stockServerFactory);
-
         // Define an HTML fragment with an icon on the left and text on the right.
         // The elements are embedded in a 3-column table.
         String label = "<html><table cellpadding=0><tr><td><img src=\""

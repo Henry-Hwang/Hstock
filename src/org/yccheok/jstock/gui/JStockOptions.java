@@ -127,7 +127,7 @@ public class JStockOptions {
         this.scanningSpeed = 10000;
         this.alertSpeed = 5;
         this.looknFeel = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
-        this.country = Country.Malaysia;
+        this.country = Country.China;
         this.soundEnabled = false;
 
         this.normalTextForegroundColor = DEFAULT_NORMAL_TEXT_FOREGROUND_COLOR;

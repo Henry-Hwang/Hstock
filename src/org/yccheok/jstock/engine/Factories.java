@@ -102,7 +102,8 @@ public enum Factories {
         brazilList.add(BrazilYahooStockServerFactory.newInstance());
         brazilList.add(GoogleStockServerFactory.newInstance(false));
         canadaList.add(YahooStockServerFactory.newInstance());
-        chinaList.add(GoogleStockServerFactory.newInstance(true));
+        chinaList.add(SinaStockServerFactory.newInstance());
+        chinaList.add(GoogleStockServerFactory.newInstance(false));
         chinaList.add(YahooStockServerFactory.newInstance());
         denmarkList.add(YahooStockServerFactory.newInstance());
         franceList.add(YahooStockServerFactory.newInstance());
