@@ -70,6 +70,15 @@ public class SinaStockFormat implements StockFormat {
         // If more than 13 days old stock, we consider it as corrupted stock.
         return (Utils.getDifferenceInDays(timestamp, now) > 13);
     }
+    @Override
+    public boolean stockFmtCheck(String code) {
+        if(code.contains(shanghaiYahoo))
+            return true;
+        else if (code.contains(shenzhenYahoo))
+            return true;
+        else
+            return false;
+    }
     private String parseToYahooFmt(String respond) {
         //we can get the stock infomation form SINA like this: 
         //HttpMethod method=new GetMethod("http://hq.sinajs.cn/list=sh601016,sz000005,sh600477,sz000005,")
@@ -107,7 +116,7 @@ public class SinaStockFormat implements StockFormat {
         return respondBuilder.toString().replace("=", ",").replace("\"", "");    
     }
     @Override
-    public String parseAsSinaStockFmt(String source) {
+    public String changeStockFmt(String source) {
             String codes = null;
             final CSVParser csvParser = new CSVParser();
             String[] fields = null;

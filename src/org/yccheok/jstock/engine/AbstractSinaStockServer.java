@@ -78,7 +78,7 @@ public abstract class AbstractSinaStockServer implements StockServer {
             final int endLoop = end - 1;
             for (int j = start; j < endLoop; j++) {
                 String codeString = null;
-
+                
                 try {
                     codeString = java.net.URLEncoder.encode(codes.get(j).toString(), "UTF-8");
                 } catch (UnsupportedEncodingException ex) {
@@ -180,7 +180,7 @@ public abstract class AbstractSinaStockServer implements StockServer {
             }
             
             codeBuilder.append(codeString).append(",");
-            System.out.println("AbstractSinaStockServer::_getStock(List<Code>)codeString ap: " + codeString);
+            System.out.println("AbstractSinaStockServer::_getStock(List<Code>)codeString list: " + codeString);
             expectedCodes.add(codes.get(i));
         }
 
@@ -198,7 +198,7 @@ public abstract class AbstractSinaStockServer implements StockServer {
         expectedCodes.add(codes.get(end-1));
 
         //String _tcodes = codeBuilder.toString();
-        final String _code = SinaStockFormat.getInstance().parseAsSinaStockFmt(codeBuilder.toString());
+        final String _code = SinaStockFormat.getInstance().changeStockFmt(codeBuilder.toString());
         System.out.println("AbstractSinaStockServer::_getStock(List<Code>)code: " + _code);
         stringBuilder.append(_code).append(YAHOO_STOCK_FORMAT);
 

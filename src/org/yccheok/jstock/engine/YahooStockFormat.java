@@ -77,7 +77,7 @@ public class YahooStockFormat implements StockFormat {
      * @return
      */
     @Override
-    public String parseAsSinaStockFmt(String source){
+    public String changeStockFmt(String source){
         return null;   
     }
     // Update on 19 March 2009 : We cannot assume certain parameters will always
@@ -374,4 +374,9 @@ public class YahooStockFormat implements StockFormat {
     private static final Pattern percentagePattern = Pattern.compile("%");
     
     private static final Log log = LogFactory.getLog(YahooStockFormat.class);
+
+    @Override
+    public boolean stockFmtCheck(String _code) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
