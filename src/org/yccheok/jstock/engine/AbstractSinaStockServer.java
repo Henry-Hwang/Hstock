@@ -265,11 +265,11 @@ public abstract class AbstractSinaStockServer implements StockServer {
         } catch (UnsupportedEncodingException ex) {
             throw new StockNotFoundException(code.toString(), ex);
         }
-
-        stringBuilder.append(_code).append(YAHOO_STOCK_FORMAT);
+        String tcode = SinaStockFormat.getInstance().changeStockFmt(_code, 0,0);
+        stringBuilder.append(tcode).append(YAHOO_STOCK_FORMAT);
 
         final String location = stringBuilder.toString();
-        System.out.println("AbstractSinaStockServer::_getStock(): " + _code);
+        System.out.println("AbstractSinaStockServer::_getStock(): " + tcode);
         for (int retry = 0; retry < NUM_OF_RETRY; retry++) {
             System.out.println("AbstractSinaStockServer::_getStock(): location: " + location);
             final String respond = org.yccheok.jstock.gui.Utils.getResponseBodyAsStringBasedOnProxyAuthOption(location);

@@ -157,8 +157,8 @@
   </AuxValues>
 
   <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout">
-    <Property name="horizontalGap" type="int" value="5"/>
     <Property name="verticalGap" type="int" value="5"/>
+    <Property name="horizontalGap" type="int" value="5"/>
   </Layout>
   <SubComponents>
     <Container class="javax.swing.JPanel" name="jPanel4">
@@ -176,8 +176,8 @@
       </Constraints>
 
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBorderLayout">
-        <Property name="horizontalGap" type="int" value="5"/>
         <Property name="verticalGap" type="int" value="5"/>
+        <Property name="horizontalGap" type="int" value="5"/>
       </Layout>
       <SubComponents>
         <Container class="javax.swing.JPanel" name="jPanel2">
@@ -225,8 +225,8 @@
 
               <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
                 <Property name="columns" type="int" value="1"/>
-                <Property name="rows" type="int" value="2"/>
                 <Property name="verticalGap" type="int" value="5"/>
+                <Property name="rows" type="int" value="2"/>
               </Layout>
               <SubComponents>
                 <Component class="javax.swing.JLabel" name="jLabel1">
@@ -249,8 +249,8 @@
 
               <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
                 <Property name="columns" type="int" value="1"/>
-                <Property name="rows" type="int" value="2"/>
                 <Property name="verticalGap" type="int" value="5"/>
+                <Property name="rows" type="int" value="2"/>
               </Layout>
               <SubComponents>
                 <Component class="javax.swing.JLabel" name="jLabel2">
@@ -312,8 +312,8 @@
           </Constraints>
 
           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-            <Property name="horizontalGap" type="int" value="10"/>
             <Property name="verticalGap" type="int" value="10"/>
+            <Property name="horizontalGap" type="int" value="10"/>
           </Layout>
           <SubComponents>
             <Component class="javax.swing.JLabel" name="jLabel9">

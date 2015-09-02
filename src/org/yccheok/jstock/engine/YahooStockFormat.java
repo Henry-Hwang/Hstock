@@ -379,4 +379,9 @@ public class YahooStockFormat implements StockFormat {
     public boolean stockFmtCheck(String _code) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public String changeStockFmt(String code, int from, int to) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

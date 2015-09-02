@@ -19,11 +19,19 @@
 
 package org.yccheok.jstock.engine;
 
+import au.com.bytecode.opencsv.CSVReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -75,7 +83,7 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         System.out.println("AbstractSinaStockHistoryServer::parse(): ");
         System.out.println("respond: " + respond);
         String[] stockDatas = respond.split("\r\n|\r|\n");
-
+        
         // There must be at least two lines : header information and history information.
         final int length = stockDatas.length;
 
@@ -182,10 +190,141 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         return (historyDatabase.size() > 0);
     }
 
+    private boolean parseCSVLine(List<String[]> list)
+    {
+        historyDatabase.clear();
+        timestamps.clear();
+
+        long timestamp = 0;
+        System.out.println("AbstractSinaStockHistoryServer::parseCSVLine(): code : " + code.toString());
+
+        Symbol symbol = Symbol.newInstance(code.toString());
+        String name = symbol.toString();
+        Stock.Board board = Stock.Board.Unknown;
+        Stock.Industry industry = Stock.Industry.Unknown;
+
+        try {
+            Stock stock = getStockServer().getStock(code);
+            symbol = stock.symbol;
+            name = stock.getName();
+            board = stock.getBoard();
+            industry = stock.getIndustry();
+        }
+        catch (StockNotFoundException exp) {
+            log.error(null, exp);
+        }
+
+        double previousClosePrice = Double.MAX_VALUE;
+
+        for (String[] fields: list)
+        {
+            // Use > instead of >=, to avoid header information (Date,Open,High,Low,Close,Volume,Adj Close)
+            //String[] fields = stockDatas[0].split(",");
+
+            // Date,Open,High,Low,Close,Volume,Adj Close
+            if (fields.length < 7) {
+                continue;
+            }
+
+            try {
+                timestamp = simpleDateFormatThreadLocal.get().parse(fields[0]).getTime();
+            } catch (ParseException ex) {
+                log.error(null, ex);
+                continue;
+            }
+
+            double prevPrice = 0.0;
+            double openPrice = 0.0;
+            double highPrice = 0.0;
+            double lowPrice = 0.0;
+            double closePrice = 0.0;
+            // TODO: CRITICAL LONG BUG REVISED NEEDED.
+            long volume = 0;
+            //double adjustedClosePrice = 0.0;
+
+            try {
+                System.out.println(fields[0] + "," +fields[1] + "," +fields[2] + "," +fields[3] + "," +fields[4] + "," +fields[5] + "," +fields[6]);
+                prevPrice = (previousClosePrice == Double.MAX_VALUE) ? 0 : previousClosePrice;
+                openPrice = Double.parseDouble(fields[1]);
+                highPrice = Double.parseDouble(fields[2]);
+                lowPrice = Double.parseDouble(fields[3]);
+                closePrice = Double.parseDouble(fields[4]);
+                // TODO: CRITICAL LONG BUG REVISED NEEDED.
+                volume = Long.parseLong(fields[5]);
+                //adjustedClosePrice = Double.parseDouble(fields[6]);
+            }
+            catch (NumberFormatException exp) {
+                log.error(null, exp);
+            }
+           // if(volume==0) {
+           //     continue;
+           // }
+            double changePrice = (previousClosePrice == Double.MAX_VALUE) ? 0 : closePrice - previousClosePrice;
+            double changePricePercentage = ((previousClosePrice == Double.MAX_VALUE) || (previousClosePrice == 0.0)) ? 0 : changePrice / previousClosePrice * 100.0;
+
+            Stock stock = new Stock(
+                    code,
+                    symbol,
+                    name,
+                    board,
+                    industry,
+                    prevPrice,
+                    openPrice,
+                    closePrice, // Last Price. 
+                    highPrice,
+                    lowPrice,
+                    volume,
+                    changePrice,
+                    changePricePercentage,
+                    0,
+                    0.0,
+                    0,
+                    0.0,
+                    0,
+                    0.0,
+                    0,
+                    0.0,
+                    0,
+                    0.0,
+                    0,
+                    0.0,
+                    0,
+                    timestamp
+                    );
+
+            historyDatabase.put(timestamp, stock);
+            timestamps.add(timestamp);
+            previousClosePrice = closePrice;
+        }
+
+        return (historyDatabase.size() > 0);
+    }
+    private List<String[]>  readHistoryFile(String path) throws FileNotFoundException, IOException
+    {
+            System.out.println("AbstractSinaStockHistoryServer::buildHistory() , can not reach server");
+            File file = new File(path);  
+            FileReader fReader = new FileReader(file);  
+            CSVReader csvReader = new CSVReader(fReader);  
+            String[] strs = csvReader.readNext();   
+            List<String[]> list = csvReader.readAll();
+            /*
+            for(String[] ss : list){ 
+                System.out.print(ss.length);
+                System.out.println();
+                for(String s : ss)  
+                    if(null != s && !s.equals(""))  
+                        System.out.print(s + " , ");  
+                System.out.println();  
+            }  
+            */       
+            csvReader.close();
+            return list;
+       
+    }
     private void buildHistory(Code code) throws StockHistoryNotFoundException
     {
         System.out.println("AbstractSinaStockHistoryServer::buildHistory()");
-        final StringBuilder stringBuilder = new StringBuilder(YAHOO_ICHART_BASED_URL);
+        final StringBuilder stringBuilder = new StringBuilder(SINA_ICHART_BASED_URL);
        
         final String symbol;
         try {
@@ -203,6 +342,7 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         final int startYear = duration.getStartDate().getYear();
 
         final StringBuilder formatBuilder = new StringBuilder("&d=");
+        final StringBuilder respondBuilder = new StringBuilder();
         formatBuilder.append(endMonth).append("&e=").append(endDate).append("&f=").append(endYear).append("&g=d&a=").append(startMonth).append("&b=").append(startDate).append("&c=").append(startYear).append("&ignore=.csv");
         final String location = stringBuilder.append(formatBuilder).toString();
 
@@ -211,9 +351,9 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         for (int retry = 0; retry < NUM_OF_RETRY; retry++) {
             System.out.println("AbstractSinaStockHistoryServer::buildHistory(): " + "getResponseBodyAsStringBasedOnProxyAuthOption");
             final String respond = org.yccheok.jstock.gui.Utils.getResponseBodyAsStringBasedOnProxyAuthOption(location);
-            System.out.println("AbstractSinaStockHistoryServer::buildHistory(): " + "getResponseBodyAsStringBasedOnProxyAuthOption End");
 
             if (respond == null) {
+                success = false;
                 continue;
             }
 
@@ -223,6 +363,22 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
                 break;
             }
         }
+        if (success == false) {
+            try {
+                List<String[]> list = readHistoryFile("D:\\work\\src\\jstock-doc\\testfiles\\his-download.csv");
+                String respond = null;
+                //success = parseCSVLine(list);
+                for (String[] fields: list){
+                    String field = fields[0]+","+fields[1]+","+fields[2]+","+fields[3]+","+fields[4]+","+fields[5]+","+fields[6];
+                    respondBuilder.append(field).append("\r\n");
+                }
+                respond = respondBuilder.toString();
+                success = parse(respond);
+                // try history
+            } catch (IOException ex) {
+                Logger.getLogger(AbstractSinaStockHistoryServer.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }        
         System.out.println("AbstractSinaStockHistoryServer::buildHistory() End");
         if (success == false) {
             throw new StockHistoryNotFoundException(code.toString());
@@ -272,9 +428,9 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
     // 2008-11-06,4.57,4.60,4.25,4.25,10717900,4.25
     // 2008-11-05,4.83,4.90,4.62,4.62,9250800,4.62
 
-    private static final int NUM_OF_RETRY = 2;
+    private static final int NUM_OF_RETRY = 0;
     private static final Duration DEFAULT_HISTORY_DURATION =  Duration.getTodayDurationByYears(10);
-    private static final String YAHOO_ICHART_BASED_URL = "http://ichart.finance.yahoo.com/table.csv?s=";
+    private static final String SINA_ICHART_BASED_URL = "http://ichart.finance.yahoo.com/table.csv?s=";
 
     private final java.util.Map<Long, Stock> historyDatabase = new HashMap<Long, Stock>();
     private final java.util.List<Long> timestamps = new ArrayList<Long>();

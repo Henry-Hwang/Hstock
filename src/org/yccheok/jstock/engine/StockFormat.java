@@ -29,6 +29,7 @@ package org.yccheok.jstock.engine;
 public interface StockFormat {
     public java.util.List<Stock> parse(String source);
     public String changeStockFmt(String source);
-
+    public String changeStockFmt(String code, int from, int to);
     public boolean stockFmtCheck(String _code);
+
 }

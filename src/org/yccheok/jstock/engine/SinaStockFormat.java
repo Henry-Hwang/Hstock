@@ -144,7 +144,22 @@ public class SinaStockFormat implements StockFormat {
             System.out.println("SinaStockFormat::parseAsSinaStockFmt(): Sian Format: " + codeBuilder.toString());
         return codeBuilder.toString();
     }
-    
+    @Override
+    public String changeStockFmt(String code, int from, int to) {
+        //300227.SZ to sz300227
+        String tcode = null;
+        if(code.contains(shenzhenYahoo)) {
+            tcode = code.replace(shenzhenYahoo, "");
+            tcode = shenzhenSina + tcode;
+        } else if (code.contains(shanghaiYahoo)) {
+            tcode = code.replace(shanghaiYahoo, "");
+            tcode = shanghaiSina + tcode;
+        } else {
+            System.out.println("SinaStockFormat::changeStockFmt(): No Support Format:  " + code);
+            tcode = "ss000001";
+        }          
+        return tcode;
+    }    
     // Update on 19 March 2009 : We cannot assume certain parameters will always
     // be float. They may become integer too. For example, in the case of Korea
     // Stock Market, Previous Close is in integer. We shall apply string quote
@@ -446,4 +461,6 @@ public class SinaStockFormat implements StockFormat {
     private static final String shenzhenSina = "sz";
     private static final String sinaFmtPrefix = "var hq_str_";
     private static final Log log = LogFactory.getLog(SinaStockFormat.class);
+
+
 }
