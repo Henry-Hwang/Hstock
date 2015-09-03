@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -86,6 +87,8 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         
         // There must be at least two lines : header information and history information.
         final int length = stockDatas.length;
+        
+        System.out.println("stockDatas.length: " + length);
 
         if (length <= 1) {
             return false;
@@ -116,7 +119,7 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
 
             // Date,Open,High,Low,Close,Volume,Adj Close
             if (fields.length < 7) {
-                continue;
+                //continue;
             }
 
             try {
@@ -134,13 +137,13 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
             // TODO: CRITICAL LONG BUG REVISED NEEDED.
             long volume = 0;
             //double adjustedClosePrice = 0.0;
-
+            //{"Date", "Open", "High", "Close", "Low", "Volume"}
             try {
                 prevPrice = (previousClosePrice == Double.MAX_VALUE) ? 0 : previousClosePrice;
                 openPrice = Double.parseDouble(fields[1]);
                 highPrice = Double.parseDouble(fields[2]);
-                lowPrice = Double.parseDouble(fields[3]);
-                closePrice = Double.parseDouble(fields[4]);
+                lowPrice = Double.parseDouble(fields[4]);
+                closePrice = Double.parseDouble(fields[3]);
                 // TODO: CRITICAL LONG BUG REVISED NEEDED.
                 volume = Long.parseLong(fields[5]);
                 //adjustedClosePrice = Double.parseDouble(fields[6]);
@@ -299,28 +302,17 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
 
         return (historyDatabase.size() > 0);
     }
-    private List<String[]>  readHistoryFile(String path) throws FileNotFoundException, IOException
-    {
-            System.out.println("AbstractSinaStockHistoryServer::buildHistory() , can not reach server");
-            File file = new File(path);  
-            FileReader fReader = new FileReader(file);  
-            CSVReader csvReader = new CSVReader(fReader);  
-            String[] strs = csvReader.readNext();   
-            List<String[]> list = csvReader.readAll();
-            /*
-            for(String[] ss : list){ 
-                System.out.print(ss.length);
-                System.out.println();
-                for(String s : ss)  
-                    if(null != s && !s.equals(""))  
-                        System.out.print(s + " , ");  
-                System.out.println();  
-            }  
-            */       
-            csvReader.close();
-            return list;
-       
-    }
+    public static String createStockCodeHistoryURL(String stockcode) {
+        //String sinacode = jchart.Utils.stockCodeYahoo2Sina(stockcode);
+        String sinacode = org.yccheok.jstock.engine.MyUtils.stockCodeYahoo2Sina(stockcode);
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd");//设置日期格式
+        System.out.println(df.format(new Date()));// new Date()为获取当前系统时间        
+        final StringBuilder stringBuilder = new StringBuilder(SINA_ICHART_BASED_URL);
+        //String url = "http://biz.finance.sina.com.cn/stock/flash_hq/kline_data.php?&rand=random(10000)&symbol=sz002241&end_date=20150806&begin_date=2010101&type=plain";
+        stringBuilder.append("&symbol=").append(sinacode).append("&end_date=").append(df.format(new Date())).append("&begin_date=").append("2010101").append("&type=").append("plain");
+        System.out.println(stringBuilder.toString());
+        return stringBuilder.toString();
+    }  
     private void buildHistory(Code code) throws StockHistoryNotFoundException
     {
         System.out.println("AbstractSinaStockHistoryServer::buildHistory()");
@@ -332,8 +324,8 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         } catch (UnsupportedEncodingException ex) {
             throw new StockHistoryNotFoundException("code.toString()=" + code.toString(), ex);
         }
-
-        stringBuilder.append(symbol);
+        
+        stringBuilder.append(org.yccheok.jstock.engine.MyUtils.stockCodeYahoo2Sina(symbol));
         final int endMonth = duration.getEndDate().getMonth();
         final int endDate = duration.getEndDate().getDate();
         final int endYear = duration.getEndDate().getYear();
@@ -344,28 +336,31 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
         final StringBuilder formatBuilder = new StringBuilder("&d=");
         final StringBuilder respondBuilder = new StringBuilder();
         formatBuilder.append(endMonth).append("&e=").append(endDate).append("&f=").append(endYear).append("&g=d&a=").append(startMonth).append("&b=").append(startDate).append("&c=").append(startYear).append("&ignore=.csv");
-        final String location = stringBuilder.append(formatBuilder).toString();
-
+       // final String location = stringBuilder.append(formatBuilder).toString();
+        final String location = createStockCodeHistoryURL(symbol);
         boolean success = false;
         System.out.println("AbstractSinaStockHistoryServer::buildHistory(): location : " + location);
         for (int retry = 0; retry < NUM_OF_RETRY; retry++) {
             System.out.println("AbstractSinaStockHistoryServer::buildHistory(): " + "getResponseBodyAsStringBasedOnProxyAuthOption");
-            final String respond = org.yccheok.jstock.gui.Utils.getResponseBodyAsStringBasedOnProxyAuthOption(location);
-
+            String respond = org.yccheok.jstock.gui.Utils.getResponseBodyAsStringBasedOnProxyAuthOption(location);
+            respond = org.yccheok.jstock.engine.MyUtils.respondFormat(respond);
             if (respond == null) {
                 success = false;
                 continue;
             }
 
+            
             success = parse(respond);
 
             if (success) {
                 break;
             }
         }
+        System.out.println("AbstractSinaStockHistoryServer::buildHistory(): success : " + success);
         if (success == false) {
             try {
-                List<String[]> list = readHistoryFile("D:\\work\\src\\jstock-doc\\testfiles\\his-download.csv");
+               // List<String[]> list = readHistoryFile("D:\\work\\src\\jstock-doc\\testfiles\\his-download.csv");
+                List<String[]> list = org.yccheok.jstock.engine.MyUtils.readHistoryFile("D:\\work\\src\\jstock-doc\\testfiles\\his-download.csv");
                 String respond = null;
                 //success = parseCSVLine(list);
                 for (String[] fields: list){
@@ -428,10 +423,12 @@ public abstract class AbstractSinaStockHistoryServer implements StockHistoryServ
     // 2008-11-06,4.57,4.60,4.25,4.25,10717900,4.25
     // 2008-11-05,4.83,4.90,4.62,4.62,9250800,4.62
 
-    private static final int NUM_OF_RETRY = 0;
+    private static final int NUM_OF_RETRY = 1;
     private static final Duration DEFAULT_HISTORY_DURATION =  Duration.getTodayDurationByYears(10);
-    private static final String SINA_ICHART_BASED_URL = "http://ichart.finance.yahoo.com/table.csv?s=";
-
+    private static final String SINA_ICHART_BASED_URL = "http://biz.finance.sina.com.cn/stock/flash_hq/kline_data.php?&rand=random(10000)";
+    private static final String SINA_LOCAL_HISTORY_PATH = "d:/work/src/jstock-doc/testfiles/";
+    private static final String SINA_LOCAL_HISTORY_FOLDER_SEC_SHANGHAI = "shanghai/";
+    private static final String SINA_LOCAL_HISTORY_FOLDER_SEC_SHENGZHEN = "shenzhen/";
     private final java.util.Map<Long, Stock> historyDatabase = new HashMap<Long, Stock>();
     private final java.util.List<Long> timestamps = new ArrayList<Long>();
 
